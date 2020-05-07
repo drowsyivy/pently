@@ -1,7 +1,10 @@
-# Pently
+# drowsypently
 
-A music engine for NES that supports both NES playback (with sound
-effects) and NSF.
+A fork of PinoBatch's music engine for NES that supports both NES
+playback (with sound effects) and NSF. Purely for personal use.
+
+Please use PinoBatch's original engine unless you have a good reason to
+use this fork.
 
 Documentation can be found in `docs/` and example tracks can be found in `musicseq.pently`.
 
@@ -23,6 +26,7 @@ Documentation can be found in `docs/` and example tracks can be found in `musics
 For help setting up Python, ca65, Make, and Coreutils, see the README
 file for [nrom-template].
 
+[Pently]: https://github.com/pinobatch/pently
 [Python]: https://www.python.org/
 [ca65]: https://cc65.github.io/
 [Git for Windows]: https://git-scm.com/download/win
@@ -46,5 +50,5 @@ in `makefile` to reflect executable paths on your system, then run
 
 ## License
 
-Copyright © 2009-2020 Damian Yerrick.
-Pently is free software, under the zlib License.
+Copyright © 2009-2020 Damian Yerrick, drowsyivy
+Pently and drowsypently are free software, under the zlib License.
