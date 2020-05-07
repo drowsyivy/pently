@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Pently audio engine
+# drowsypently audio engine
 # Music assembler
-#
-# Copyright 2015-2019 Damian Yerrick
+# 
+# Original copyright 2015-2019 Damian Yerrick, 2020 drowsyivy
+# All altered and added code marked with ~~~, and all of drowsyivy's
+# comments on existing code are marked with double ~~
 # 
 # This software is provided 'as-is', without any express or implied
 # warranty.  In no event will the authors be held liable for any damages
@@ -37,16 +39,36 @@ try:
 except ImportError:
     print("pentlyas.py: Python 3.3 or later is required", file=sys.stderr)
 
+octave_steps = 19 # how many notes to an octave? we assume 12 for now. ~~~
+if octave_steps > 19: # ~~~
+	raise ValueError("too many steps in an octave, aborting.") # ~~~
+elif octave_steps < 1: # ~~~
+	raise ValueError("you can't have 0 steps to an octave, silly.") # ~~~
+
 scaledegrees = {
     'c': 0, 'd': 1, 'e': 2, 'f': 3, 'g': 4, 'a': 5, 'h': 6, 'b': 6
 }
-notenamesemis = {
-    'c': 0, 'd': 2, 'e': 4, 'f': 5, 'g': 7, 'a': 9, 'h': 11
-}
-accidentalmeanings = {
-    '': 0, 'b': -1, 'bb': -2, '-': -1, '--': -2, 'es': -1, 'eses': -2,
-    '#': 1, '##': 2, '+': 1, '++': 2, 's': 1, 'ss': 2, 'x': 2,
-    'is': 1, 'isis': 2,
+fifth_cents = 701.955/1200 # ~~~
+notenamesemis = { # ~~~ generate notes based on octave_steps
+    'c': 0, # ~~~
+    'd': round(fifth_cents*octave_steps)*2 - (octave_steps*1), # ~~~
+    'e': round(fifth_cents*octave_steps)*4 - (octave_steps*2), # ~~~
+    'f': round(fifth_cents*octave_steps)*-1 + octave_steps, # ~~~
+    'g': round(fifth_cents*octave_steps), # ~~~
+    'a': round(fifth_cents*octave_steps)*3 - (octave_steps*1), # ~~~
+    'h': round(fifth_cents*octave_steps)*5 + (octave_steps*-2) # ~~~
+} # ~~~
+# ~~~ define the number of steps to raise by a sharp
+sharp_steps = round(fifth_cents*octave_steps)*7 - (octave_steps*4) # ~~~
+accidentalmeanings = { # ~~~ alter the accidentals dynamically
+    '': 0,
+    'b': -sharp_steps, 'bb': -sharp_steps*2, # ~~~
+    '-': -1, '--': -2, # ~~~ -/+ are changed in meaning to signify steps
+    'es': -sharp_steps, 'eses': -sharp_steps, # ~~~
+    '#': sharp_steps, '##': sharp_steps*2, # ~~~
+    '+': 1, '++': 2, # ~~~ -/+ are no longer synonymous with b/#
+    's': sharp_steps, 'ss': sharp_steps*2, 'x': sharp_steps*2, # ~~~
+    'is': sharp_steps, 'isis': sharp_steps*2, # ~~~
 }
 duraugmentnums = {
     '': 4, '.': 6, '..': 7, 'g': 0
@@ -70,23 +92,39 @@ volcodes = {
 }
 pitched_tracks = {'pulse1': 0, 'pulse2': 1, 'triangle': 2, 'attack': 4}
 track_suffixes = ['Sq1', 'Sq2', 'Tri', 'Noise', 'Attack']
-pattern_pitchoffsets = [
+pattern_pitchoffsets = [ # ~~seems to be purely for rendering, ignoring
     'N_C', 'N_CS', 'N_D', 'N_DS', 'N_E', 'N_F',
     'N_FS', 'N_G', 'N_GS', 'N_A', 'N_AS', 'N_B',
     'N_CH', 'N_CSH', 'N_DH', 'N_DSH', 'N_EH', 'N_FH',
     'N_FSH', 'N_GH', 'N_GSH', 'N_AH', 'N_ASH', 'N_BH',
     'N_CHH'
 ]
+intervals = { # ~~~ generate intervals based on octave steps
+    'm3':   '%x'.upper() % (round(fifth_cents*octave_steps)*-3 + (octave_steps*2)), # ~~~
+    'M3':   '%x'.upper() % (round(fifth_cents*octave_steps)*4 - (octave_steps*2)), # ~~~
+    'P4':   '%x'.upper() % (round(fifth_cents*octave_steps)*-1 + (octave_steps)), # ~~~
+    'd5':   '%x'.upper() % (round(fifth_cents*octave_steps)*-6 + (octave_steps*4)), # ~~~
+    'P5':   '%x'.upper() % (round(fifth_cents*octave_steps)), # ~~~
+    'A5':   '%x'.upper() % (round(fifth_cents*octave_steps)*8 - (octave_steps*4)), # ~~~
+    'd7':   '%x'.upper() % (round(fifth_cents*octave_steps)*-9 + (octave_steps*6)), # ~~~
+    'm7':   '%x'.upper() % (round(fifth_cents*octave_steps)*-2 + (octave_steps*2)), # ~~~
+    'M7':   '%x'.upper() % (round(fifth_cents*octave_steps)*5 + (octave_steps*-2)) # ~~~
+} # ~~~
+
+for i, j in intervals.items(): # ~~~ so that the arp parser doesn't get overflown
+	if len(j) > 1:
+		intervals[i] = '%x'.upper() % (round(fifth_cents*octave_steps))
+
 default_arp_names = {
     'OF':   '00',     # off
-    'M':    '47',     # major
-    'm':    '37',     # minor
-    'maj7': '4B',     # major 7
-    'm7':   '3A',     # minor 7
-    'dom7': '4A',     # dominant 7
-    'dim':  '36',     # diminished
-    'dim7': '39',     # diminished 7
-    'aug':  '48',     # augmented
+    'M':    '%s%s' % (intervals['M3'], intervals['P5']),    # major ~~~
+    'm':    '%s%s' % (intervals['m3'], intervals['P5']),    # minor ~~~
+    'maj7': '%s%s' % (intervals['M3'], intervals['M7']),    # major 7 ~~~
+    'm7':   '%s%s' % (intervals['m3'], intervals['m7']),    # minor 7 ~~~
+    'dom7': '%s%s' % (intervals['M3'], intervals['m7']),    # dominant 7 ~~~
+    'dim':  '%s%s' % (intervals['m3'], intervals['d5']),    # diminished ~~~
+    'dim7': '%s%s' % (intervals['m3'], intervals['d7']),    # diminished 7 ~~~
+    'aug':  '%s%s' % (intervals['M3'], intervals['A5']),    # major ~~~
 }
 
 # The concepts of musical pitch and time ############################
@@ -142,9 +180,11 @@ arp_names
         language = language.lower()
         # English B is H; German and Scandinavian B is H flat
         if language == 'english':
-            self.language, self.b_means = language, 11  # a, a#, b, c
+            b_steps = round(fifth_cents*octave_steps)*5-(octave_steps*2) # ~~~ calc
+            self.language, self.b_means = language, b_steps  # a, a#, b, c ~~~
         elif language == 'deutsch':
-            self.language, self.b_means = language, 10  # a, a#, h, c
+            b_steps = round(fifth_cents*octave_steps)*-2+(octave_steps*2) # ~~~
+            self.language, self.b_means = language, b_steps  # a, a#/b, h, c ~~~
         else:
             raise ValueError("unknown notenames language %s; try english or deutsch"
                              % language)
@@ -187,16 +227,16 @@ octave -- the number of commas (negative) or primes (positive) in
 
         # Only an arpeggio within an octave can be inverted
         nibbles = [int(c, 16) for c in arp]
-        if max(nibbles) >= 12:
-            raise ValueError("interval in %s too large to invert; must be smaller than an octave (C)"
+        if max(nibbles) >= octave_steps: # ~~~
+            raise ValueError("interval in %s too large to invert; must be smaller than an octave"
                              % arp)
 
         # 070 -> 050, preserving ratio of 50:50 arps
         if nibbles[1] == 0:
-            return "%x0" % (12 - nibbles[0])
+            return "%x0" % (octave_steps - nibbles[0]) # ~~~
 
         # Replace 0 with C and subtract the lowest nonzero
-        nibbles = [12] + [c or 12 for c in nibbles]
+        nibbles = [octave_steps] + [c or octave_steps for c in nibbles] # ~~~
         lowest = min(nibbles)
         nibbles = [c - lowest for c in nibbles]
 
@@ -332,7 +372,7 @@ Return None (if arp is falsey), 2 hex digits, or '-' followed by
             semi = notenamesemis[notename]
 
         self.last_octave = scaledegree, octave
-        notenum = semi + accidentalmeanings[accidental] + 12 * octave + 15
+        notenum = semi + accidentalmeanings[accidental] + octave_steps * octave + octave_steps + int(intervals['m3']) # ~~~
 
         # Save the single-note arpeggio if any, and if there is one,
         # have it return to 00 instead of unspecified
@@ -1986,7 +2026,9 @@ Used to find the target of a time, scale, durations, or notenames command.
         pps = self.extract_prepositions(words)
         track = pps.pop('on', None)
         instrument = pps.pop('with', None)
-        transpose = int(pps.pop('up', 0)) - int(pps.pop('down', 0))
+        coarse_transpose = int(pps.pop('up', 0)) - int(pps.pop('down', 0)) # ~~~ interprets up/down by 12edo
+        fine_transpose = int(pps.pop('ups', 0)) - int(pps.pop('downs', 0)) # ~~~ new command for transposing by edo steps
+        transpose = round(coarse_transpose*octave_steps/12) + fine_transpose # ~~~ transpose by 12edo steps
         if pps:
             raise ValueError("unknown prepositions: " + " ".join(pps))
         song = self.cur_song
@@ -2616,11 +2658,12 @@ region_period_numerator = {
     'dendy': 266017125.0/(10 * 16 * 15)
 }
 
-def getPeriodValues(maxNote=64, region='ntsc', a=440.0):
+max_note_default = round(64*octave_steps/12) # ~~~
+def getPeriodValues(maxNote=max_note_default, region='ntsc', a=440.0): # ~~~
     numerator = region_period_numerator[region.strip().lower()]
     octaveBase = numerator / (a/8.0)
-    semitone = 2.0**(1./12)
-    relFreqs = [(1 << (i // 12)) * semitone**(i % 12)
+    semitone = 2.0**(1./octave_steps) # ~~~
+    relFreqs = [(1 << (i // octave_steps)) * semitone**(i % octave_steps) # ~~~
                 for i in range(maxNote)]
     periods = [min(2048, int(round(octaveBase / freq))) - 1
                for freq in relFreqs]
@@ -2665,8 +2708,8 @@ def parse_argv(argv):
         parser.error("cannot write include file without infilename")
     if args.periods < 0:
         parser.error('NUMSEMITONES cannot be negative')
-    if args.periods > 88:
-        parser.error('2A03 not precise enough for NUMSEMITONES > 88')
+    if args.periods > round(octave_steps*87/12) + 1: # ~~~
+        parser.error('2A03 not precise enough for NUMSEMITONES > ',floor(octave_steps*88/12)) # ~~~
     min_tuning = region_period_numerator[args.period_region] / 256
     if args.period_tuning < min_tuning:
         msg = ("tuning below %.1f Hz in %s makes 'a,,' unreachable"

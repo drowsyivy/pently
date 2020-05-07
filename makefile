@@ -19,6 +19,9 @@ version := 0.05wip12-d1
 # audio/pino-a53.pently, use "make pino-a53.nsf".
 scorename := musicseq
 
+# how many total notes? 76 is default ~~~
+periods := 120
+
 # Space-separated list of asm files that make up the ROM,
 # whether source code or generated
 objlist := main \
@@ -144,9 +147,9 @@ $(objdir)/main.o: \
 $(objdir)/pentlybss.inc: tools/pentlybss.py $(srcdir)/pentlyconfig.inc
 	$(PY) $^ pentlymusicbase -o $@
 
-# Translate music project
+# Translate music project ~~~
 $(objdir)/%.s: tools/pentlyas.py audio/%.pently
-	$(PY) $^ -o $@ --write-inc $(@:.s=-titles.inc) --periods 76
+	$(PY) $^ -o $@ --write-inc $(@:.s=-titles.inc) --periods $(periods)
 $(objdir)/%-titles.inc: $(objdir)/%.s
 	touch $@
 $(objdir)/nsfshell-%.s: $(objdir)/%-titles.inc $(srcdir)/nsfshell.s
@@ -154,13 +157,13 @@ $(objdir)/nsfshell-%.s: $(objdir)/%-titles.inc $(srcdir)/nsfshell.s
 $(objdir)/nsfeshell-%.s: $(objdir)/%-titles.inc $(srcdir)/nsfeshell.s
 	cat $^ > $@
 
-# Translate music project with bookmarks/rehearsal marks
+# Translate music project with bookmarks/rehearsal marks ~~~
 $(objdir)/%-rmarks.s: tools/pentlyas.py audio/%.pently
-	$(PY) $^ -o $@ --write-inc $(@:-rmarks.s=-titles.inc) --periods 76 --rehearse
+	$(PY) $^ -o $@ --write-inc $(@:-rmarks.s=-titles.inc) --periods $(periods) --rehearse
 $(objdir)/tracknames-%.s: $(objdir)/%-titles.inc $(srcdir)/tracknames.s
 	cat $^ > $@
 
-# Translate FamiTracker music project
+# Translate FamiTracker music project ~~~
 
 $(objdir)/%.ftm.txt: audio/%.ftm
 	$(FAMITRACKER) $< -export $@
@@ -170,9 +173,9 @@ $(objdir)/%.pently: $(objdir)/%.ftm.txt
 	$(FT2P) -i $< -o $@
 
 $(objdir)/%.s: tools/pentlyas.py $(objdir)/%.pently
-	$(PY) $^ -o $@ --write-inc $(@:.s=-titles.inc) --periods 76
+	$(PY) $^ -o $@ --write-inc $(@:.s=-titles.inc) --periods $(periods)
 $(objdir)/%-rmarks.s: tools/pentlyas.py $(objdir)/%.pently
-	$(PY) $^ -o $@ --write-inc $(@:-rmarks.s=-titles.inc) --periods 76 --rehearse
+	$(PY) $^ -o $@ --write-inc $(@:-rmarks.s=-titles.inc) --periods $(periods) --rehearse
 
 # Rules for CHR ROM
 

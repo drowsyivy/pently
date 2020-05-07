@@ -6,6 +6,11 @@ playback (with sound effects) and NSF. Purely for personal use.
 Please use PinoBatch's original engine unless you have a good reason to
 use this fork.
 
+## Changes
+
+- Added preliminary alternate EDO support
+- Added new ups/downs commands for transposing by EDO steps
+
 Documentation can be found in `docs/` and example tracks can be found in `musicseq.pently`.
 
 ## Building
@@ -50,5 +55,5 @@ in `makefile` to reflect executable paths on your system, then run
 
 ## License
 
-Copyright © 2009-2020 Damian Yerrick, drowsyivy
+Copyright © 2009-2020 Damian Yerrick, drowsyivy.
 Pently and drowsypently are free software, under the zlib License.
