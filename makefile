@@ -10,8 +10,8 @@
 #
 
 # These are used in the title of the NES program and the zip file.
-title := pently
-version := 0.05wip12
+title := drowsypently
+version := 0.05wip12-d1
 
 # Name of Pently score for main targets "pently.nes" and "pently.nsf"
 # is audio/$(scorename).pently, such as audio/musicseq.pently.
@@ -37,7 +37,7 @@ srcdir := src
 imgdir := tilesets
 
 FT2P := ../ft2pently/ft2p
-FAMITRACKER := wine '/home/pino/.wine/drive_c/Program Files (x86)/FamiTracker/j0CC-Famitracker-j0.6.1.exe'
+FAMITRACKER := wine '~/.wine/drive_c/Program Files (x86)/FamiTracker/j0CC-Famitracker-j0.6.1.exe'
 EMU := fceux --input1 GamePad.0
 DEBUGEMU := ~/.wine/drive_c/Program\ Files\ \(x86\)/FCEUX/fceux.exe
 # other options for EMU are start (Windows) or xdg-open (*n?x)
